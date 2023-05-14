@@ -2,18 +2,11 @@ import os
 from pathlib import Path
 from typing import Any, Literal, Optional, Type, Union
 from sqlmodel import SQLModel, Session, create_engine, select
-
-from kivy.logger import Logger as logger, file_log_handler, console
 from pprint import pformat
-import logging
+from simple_ledger._log import Logger
+from simple_ledger._config import AppConfig as config
 
-engine_logger = logging.getLogger("sqlalchemy.engine")
-orm_logger = logging.getLogger("sqlalchemy.orm")
-pool_logger = logging.getLogger("sqlalchemy.pool")
-
-for _logger in [engine_logger, orm_logger, pool_logger]:
-    _logger.addHandler(file_log_handler)
-    _logger.addHandler(console)
+logger = Logger(name="PyLedger", level=config.APP_LOG_LEVEL)
 
 
 class DB:

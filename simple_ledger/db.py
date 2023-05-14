@@ -2,8 +2,8 @@ import datetime
 from pathlib import Path
 from typing import Any, Literal, Optional
 from sqlmodel import SQLModel, Field
-from simple_ledger._db import DB
-from kivy.logger import Logger as logger
+from simple_ledger._db import DB, logger
+from simple_ledger._config import AppConfig as config
 
 
 class Ledger(SQLModel, table=True):  # One and only table/model : `Ledger`
@@ -57,13 +57,7 @@ class LedgerDB(DB):
         # this case, True)
         # - `hide_parameters`: a boolean that specifies whether or not to hide sensitive information
         # (such as passwords) in SQL statements (in this case, False)
-        self.database_config: dict[str, Any] = {
-            "db_api": "sqlite",
-            "db_name": "simple_ledger.db",
-            "db_dir": Path(".simple_ledger/DB"),
-            "echo": True,
-            "hide_parameters": False,
-        }
+        self.database_config: dict[str, Any] = config().APP_DB_CONFIG
 
         super().__init__(
             db_api=self.database_config["db_api"],
@@ -201,7 +195,7 @@ class LedgerDB(DB):
             where_and_to=where_and_to,
         )
 
-    def summary(self, from_: datetime.date, to_: datetime.date) -> dict:
+    def summary(self) -> dict:
         """
         The function summarizes ledger information by calculating total transactions, total credit and
         debit amounts, and amounts credited and debited by each person.
