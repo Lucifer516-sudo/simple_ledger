@@ -12,8 +12,6 @@ sqlmodel = "^0.0.8"
 rich = "^13.3.4"
 colorama = "^0.4.6"
 ascii-magic = "^2.3.0"
-kivy = "^2.1.0"
-loguru = "^0.7.0"
 typer = "^0.9.0"
 flet = "^0.6.2"
 
