@@ -2,7 +2,7 @@ import flet as ft
 
 from simple_ledger.db import Ledger, LedgerDB
 
-# from simple_ledger.fletter.controls import PaginatedDataTable
+from simple_ledger.fletter.controls import PaginatedDataTable
 
 
 def main(page: ft.Page):
@@ -27,7 +27,7 @@ def main(page: ft.Page):
             )
         )
 
-    data_table = ft.DataTable(
+    data_table: ft.DataTable = ft.DataTable(
         columns=[
             ft.DataColumn(label=ft.Text("S.No"), numeric=True),
             ft.DataColumn(label=ft.Text("From")),
@@ -39,6 +39,27 @@ def main(page: ft.Page):
         expand=True,
     )
 
+    def on_changing_tab(e):
+        required_data = []
+
+        for data in database.read_ledger_info():
+            required_data.append(
+                ft.DataRow(
+                    cells=[
+                        ft.DataCell(ft.Text(value=str(data.id))),
+                        ft.DataCell(ft.Text(value=str(data.from_person))),
+                        ft.DataCell(ft.Text(value=str(data.to_person))),
+                        ft.DataCell(ft.Text(value=str(data.amount))),
+                        ft.DataCell(ft.Text(value=str(data.tag))),
+                    ]
+                )
+            )
+        data_table.rows = required_data
+        # paginated_data_table.dt = data_table
+        page.update(data_table)
+        # page.update(paginated_data_table)
+        page.update(summary_tab)
+
     # summary_tab = ft.ListView(auto_scroll=True, expand=1, spacing=10)
     # summary_tab.controls.append(data_table)
 
@@ -47,23 +68,21 @@ def main(page: ft.Page):
     # !-- Tab TWO
 
     summary_tab = ft.Column(
-        controls=[data_table],
+        controls=[paginated_data_table],
         expand=True,
         scroll=ft.ScrollMode.AUTO,
     )
 
-    secondary_column_from = ft.TextField(
-        label="From", autofocus=True, height=50
-    )
+    secondary_column_from = ft.TextField(label="Given From", autofocus=True, height=50)
 
-    secondary_column_to = ft.TextField(label="To", height=50)
-    secondary_column_amount = ft.TextField(label="Amount", height=50)
-    secondary_column_description = ft.TextField(label="Description", height=50)
+    secondary_column_to = ft.TextField(label="Given To", height=50)
+    secondary_column_amount = ft.TextField(label="Given Amount", height=50)
+    secondary_column_description = ft.TextField(label="Transaction Info", height=50)
     secondary_column_tag = ft.Dropdown(
-        label="Tag",
+        label="Mode Of Transaction",
         options=[
-            ft.dropdown.Option(key="CREDIT", text="CREDIT"),
-            ft.dropdown.Option(key="DEBIT", text="DEBIT"),
+            ft.dropdown.Option(key="CREDIT", text="Credit"),
+            ft.dropdown.Option(key="DEBIT", text="Debit"),
         ],
     )
 
@@ -76,7 +95,7 @@ def main(page: ft.Page):
             secondary_column_tag,
         ]:
             if not val.value:
-                print("None  | False")
+                ...  # do nothing / log to console that there is no data to add
         else:
             entry = Ledger(
                 from_person=str(secondary_column_from.value),
@@ -86,11 +105,16 @@ def main(page: ft.Page):
                 tag=secondary_column_tag.value.upper(),
             )
             database.add_ledger_info(ledger=entry)
-            # secondary_column_from.value = ""
-            # secondary_column_to.value = ""
-            # secondary_column_amount.value = ""
-            # secondary_column_description.value = ""
-            # secondary_column_tag.value = ""
+            secondary_column_from.value = ""
+            secondary_column_to.value = ""
+            secondary_column_amount.value = ""
+            secondary_column_description.value = ""
+            secondary_column_tag.value = ""
+            page.update(secondary_column_from)
+            page.update(secondary_column_to)
+            page.update(secondary_column_amount)
+            page.update(secondary_column_description)
+            page.update(secondary_column_tag)
 
     ledger_entry_button = ft.TextButton(text="+ Add", on_click=add_entry)
 
@@ -122,12 +146,10 @@ def main(page: ft.Page):
             ),
             ft.Tab(icon=ft.icons.DELETE_ROUNDED, text="Delete Entry"),
         ],
+        on_change=on_changing_tab,
     )
 
     page.add(tab)
 
 
-if ft.Page.platform == "android":
-    ft.app(target=main, view=ft.WEB_BROWSER, port=9000)
-else:
-    ft.app(target=main)
+ft.app(target=main)
