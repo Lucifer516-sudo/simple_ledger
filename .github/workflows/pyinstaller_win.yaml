@@ -3,10 +3,8 @@ name: Python package
 on: [push]
 
 jobs:
-  build:
-
+  build-windows:
     runs-on: windows-latest
-
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python 3.x
@@ -18,13 +16,37 @@ jobs:
           (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | py -
           C:\Users\runneradmin\AppData\Roaming\Python\Scripts\poetry install
           C:\Users\runneradmin\AppData\Roaming\Python\Scripts\poetry run pip3 install pyinstaller
-          C:\Users\runneradmin\AppData\Roaming\Python\Scripts\poetry run flet pack -i simple_ledger/icon/20230423_122200_0000.png  -n PyLedger simple_ledger/fletter/fletter2.py
+          C:\Users\runneradmin\AppData\Roaming\Python\Scripts\poetry run flet pack -v -i simple_ledger/icon/20230423_122200_0000.png  -n PyLedger simple_ledger/fletter/controls.py
           ls dist
 
       - name: Upload build as artifact
         uses: actions/upload-artifact@v3
         with:
-          name: flet-pack-result
+          name: flet-pack-result-windows
           path: dist/PyLedger.exe
+        # Use always() to always run this step to publish test results when there are test failures
+        if: ${{ always() }}
+  
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.x
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Display Python version
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          poetry install
+          poetry run pip3 install pyinstaller
+          poetry run flet pack -v -i simple_ledger/icon/20230423_122200_0000.png  -n PyLedger simple_ledger/fletter/controls.py
+          ls dist
+
+      - name: Upload build as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: flet-pack-result-linux
+          path: dist/PyLedger
         # Use always() to always run this step to publish test results when there are test failures
         if: ${{ always() }}

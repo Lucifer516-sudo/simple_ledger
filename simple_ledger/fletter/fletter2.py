@@ -1,5 +1,5 @@
-from typing import Any, List, Optional, Union
 import flet as ft
+
 from simple_ledger.db import Ledger, LedgerDB
 
 # from simple_ledger.fletter.controls import PaginatedDataTable
@@ -105,6 +105,7 @@ def main(page: ft.Page):
         ],
         scroll="always",
     )
+
     # TAB Section
     tab = ft.Tabs(  # Top most selection widget to use
         selected_index=0,

@@ -128,7 +128,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 import os
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Self, Type, Union
 
 from sqlmodel import Field
 from simple_ledger._config import AppConfig as config
@@ -167,9 +167,7 @@ class ColoredFormatter(logging.Formatter):
 
         levelname = record.levelname
         if levelname in self.colors:
-            levelname_color = (
-                f"[{self.colors[levelname]}{levelname:<8}{self.reset}]"
-            )
+            levelname_color = f"[{self.colors[levelname]}{levelname:<8}{self.reset}]"
             record.levelname = levelname_color
         name = record.name
         name_color = f"\033[1;37m{name:<10}{self.reset}"
@@ -239,6 +237,11 @@ class Logger:
         )
         self.file_handler.setFormatter(file_formatter)
         self.logger.addHandler(self.file_handler)
+
+    @staticmethod
+    def create_child(*, parent_logger: logging.Logger, child_name: str):
+        parent_logger_name = parent_logger.name
+        return Logger(name=str(parent_logger_name + "." + child_name))
 
     def debug(self, message, *args, **kwargs):
         """Log a debug message."""

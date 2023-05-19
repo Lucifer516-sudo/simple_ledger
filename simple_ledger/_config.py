@@ -1,8 +1,7 @@
 from dataclasses import dataclass, field
-import os
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
-from datetime import date, datetime
 
 
 @dataclass
@@ -16,6 +15,7 @@ class AppConfig:
         / "LEDGER_LOGS"
         / datetime.now().strftime("%Y")
         / datetime.now().strftime("%B").upper()
+        / str(datetime.now().hour)
     )
     APP_LOG_DIR.mkdir(parents=True, exist_ok=True)
     mtimes = []
@@ -30,7 +30,7 @@ class AppConfig:
         for file_name in Path(APP_LOG_DIR).glob("*.log"):
             if max_time == file_name.lstat().st_mtime:
                 __count__ = (
-                    int(str(file_name).replace(".log", "")[-1]) + 1
+                    int(str(file_name).replace(".log", "").split("_")[-1]) + 1
                 )  # increasing the count
 
     APP_LOG_FILE_NAME: str = (
