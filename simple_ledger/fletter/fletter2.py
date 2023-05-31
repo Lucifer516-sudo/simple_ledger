@@ -39,38 +39,13 @@ def main(page: ft.Page):
         expand=True,
     )
 
-    def on_changing_tab(e):
-        required_data = []
-
-        for data in database.read_ledger_info():
-            required_data.append(
-                ft.DataRow(
-                    cells=[
-                        ft.DataCell(ft.Text(value=str(data.id))),
-                        ft.DataCell(ft.Text(value=str(data.from_person))),
-                        ft.DataCell(ft.Text(value=str(data.to_person))),
-                        ft.DataCell(ft.Text(value=str(data.amount))),
-                        ft.DataCell(ft.Text(value=str(data.tag))),
-                    ]
-                )
-            )
-        data_table.rows = required_data
-        # paginated_data_table.dt = data_table
-        page.update(data_table)
-        # page.update(paginated_data_table)
-        page.update(summary_tab)
-
-    # summary_tab = ft.ListView(auto_scroll=True, expand=1, spacing=10)
-    # summary_tab.controls.append(data_table)
-
-    # Tab ONE --!
-
-    # !-- Tab TWO
+    paginated_data_table = PaginatedDataTable(
+        datatable=data_table, table_title="Summary", rows_per_page=10
+    )
 
     summary_tab = ft.Column(
         controls=[paginated_data_table],
-        expand=True,
-        scroll=ft.ScrollMode.AUTO,
+        scroll=ft.ScrollMode.ALWAYS,
     )
 
     secondary_column_from = ft.TextField(label="Given From", autofocus=True, height=50)
@@ -146,7 +121,6 @@ def main(page: ft.Page):
             ),
             ft.Tab(icon=ft.icons.DELETE_ROUNDED, text="Delete Entry"),
         ],
-        on_change=on_changing_tab,
     )
 
     page.add(tab)

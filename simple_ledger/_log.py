@@ -143,16 +143,20 @@ class ColoredFormatter(logging.Formatter):
         reset (str): The ANSI reset code.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
-        self.colors = {
-            "DEBUG": "\033[1;34m",
-            "INFO": "\033[1;32m",
-            "WARNING": "\033[1;33m",
-            "ERROR": "\033[1;31m",
-            "CRITICAL": "\033[1;41m",
-        }
-        self.reset = "\033[0m"
+        # self.colors = {
+        #     "DEBUG": "\033[1;34m",
+        #     "INFO": "\033[1;32m",
+        #     "WARNING": "\033[1;33m",
+        #     "ERROR": "\033[1;31m",
+        #     "CRITICAL": "\033[1;41m",
+        # }
+        # self.reset = "\033[0m"
 
     def format(self, record):
         """
@@ -166,13 +170,21 @@ class ColoredFormatter(logging.Formatter):
         """
 
         levelname = record.levelname
-        if levelname in self.colors:
-            levelname_color = f"[{self.colors[levelname]}{levelname:<8}{self.reset}]"
-            record.levelname = levelname_color
+        self.backup_level_name = record.levelname
+        self.backup_name = record.levelname
+        # if levelname in self.colors:
+        levelname_color = f"[{levelname:<8}]"
+        record.levelname = levelname_color
         name = record.name
-        name_color = f"\033[1;37m{name:<10}{self.reset}"
+        # if not self.custom_name == None:
+        # record.message = self.custom_name + ": ``" + record.message
+        name_color = f"{name:<10}"
         record.name = name_color
         return super().format(record)
+
+    def __exit__(self, record):
+        record.name = self.backup_name
+        record.levelname = self.backup_level_name
 
 
 class Logger:
@@ -191,6 +203,7 @@ class Logger:
         self,
         *,
         name: str,
+        custom_name_to_message: str = "",
         level=config.APP_LOG_LEVEL,
         log_file: Optional[str] = config().APP_LOG_FILE_NAME,
         log_dir: Union[str, Path, None] = config().APP_LOG_DIR,
@@ -210,11 +223,22 @@ class Logger:
         """
 
         self.logger_name = name
+        self.custom_name_to_message = custom_name_to_message
         self.logger = logging.getLogger(name)
         self.logger.setLevel(level)
-        self.formatter = ColoredFormatter(
-            "[%(asctime)s] %(levelname)s `%(name)s` : %(message)s"
-        )
+        if not self.custom_name_to_message == "":
+            self.formatter = ColoredFormatter(
+                "[%(asctime)s] %(levelname)s `%(name)s` : "
+                + str(self.custom_name_to_message)
+                + " >> "
+                + "%(message)s",
+                # custom_name_to_message=self.custom_name_to_message,
+            )
+        else:
+            self.formatter = ColoredFormatter(
+                "[%(asctime)s] %(levelname)s `%(name)s` : %(message)s"
+            )
+
         self.console_handler = logging.StreamHandler()
         self.console_handler.setFormatter(self.formatter)
         self.logger.addHandler(self.console_handler)
@@ -232,9 +256,17 @@ class Logger:
             backupCount=backup_count,
             maxBytes=max_size,
         )
-        file_formatter = logging.Formatter(
-            "[%(asctime)s] %(levelname)s `%(name)s`: %(message)s"
-        )
+        if not self.custom_name_to_message == "":
+            file_formatter = logging.Formatter(
+                "[%(asctime)s] %(levelname)s `%(name)s` : "
+                + str(self.custom_name_to_message)
+                + " >> "
+                + "%(message)s",
+            )
+        else:
+            file_formatter = logging.Formatter(
+                "[%(asctime)s] %(levelname)s `%(name)s` : %(message)s",
+            )
         self.file_handler.setFormatter(file_formatter)
         self.logger.addHandler(self.file_handler)
 

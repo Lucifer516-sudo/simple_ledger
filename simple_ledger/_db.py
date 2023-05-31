@@ -62,9 +62,7 @@ class DB:
             )
             if Path(self.db_dir).exists() == False:
                 Path(self.db_dir).mkdir(parents=True, exist_ok=True)
-                os.system(
-                    f"touch {str(self.db_dir)}{os.path.sep}{self.db_name}"
-                )
+                os.system(f"touch {str(self.db_dir)}{os.path.sep}{self.db_name}")
         except Exception as e:
             logger.error(e)
             logger.critical(
@@ -101,9 +99,7 @@ class DB:
             print(e)
             return False
 
-    def insert_records(
-        self, *, model_object: Union[list[SQLModel], SQLModel]
-    ) -> bool:
+    def insert_records(self, *, model_object: Union[list[SQLModel], SQLModel]) -> bool:
         """
         The function inserts one or more SQLModel objects into a database session and returns a boolean
         indicating success or failure.
@@ -123,18 +119,12 @@ class DB:
             with Session(self.engine) as session:
                 if type(model_object) == list:
                     session.add_all(model_object)
-                    logger.info(
-                        "Session@INSERT: Added list of SQLModel Objects"
-                    )
-                    logger.debug(
-                        f"Session@INSERT: Added Objects - {model_object}"
-                    )
+                    logger.info("Session@INSERT: Added list of SQLModel Objects")
+                    logger.debug(f"Session@INSERT: Added Objects - {model_object}")
                 else:
                     session.add(model_object)
                     logger.info("Session@INSERT: Added SQLModel Object")
-                    logger.debug(
-                        f"Session@INSERT: Added Object - {model_object}"
-                    )
+                    logger.debug(f"Session@INSERT: Added Object - {model_object}")
                 session.commit()
                 logger.debug("Session@INSERT: Committed Session ")
                 return True
@@ -148,7 +138,7 @@ class DB:
         where_and_to: Optional[dict[str, Any]] = None,
         fetch_mode: Optional[Literal["all", "one", "many"]] = "many",
         how_many: Optional[int] = 10,
-    ) -> Any:
+    ) -> list[Type[SQLModel]] | Type[SQLModel] | None:
         """
         This function reads records from a SQL database based on specified parameters and returns the
         results in a specified fetch mode.
@@ -191,9 +181,7 @@ class DB:
                     )
                 if len(list(where_and_to.keys())) > 1:
                     statement: Type[select] = select(model_class)
-                    logger.info(
-                        "Session@READ: Multiple where and to keys are given"
-                    )
+                    logger.info("Session@READ: Multiple where and to keys are given")
                     for attribute, value in list(where_and_to.items()):
                         statement = statement.where(
                             getattr(model_class, attribute) == value
@@ -220,11 +208,7 @@ class DB:
                     # return result[
                     #     0
                     # ]  # not the best way need to handle the exception here
-            elif (
-                (fetch_mode == "many")
-                and (how_many != None)
-                and (how_many > 0)
-            ):
+            elif (fetch_mode == "many") and (how_many != None) and (how_many > 0):
                 return result.fetchmany(how_many)
             else:  # if no fetch_mode specified
                 return result.all()

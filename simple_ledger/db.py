@@ -1,6 +1,6 @@
 import datetime
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, Type
 from sqlmodel import SQLModel, Field
 from simple_ledger._db import DB, logger
 from simple_ledger._config import AppConfig as config
@@ -108,30 +108,30 @@ class LedgerDB(DB):
         where_and_to: dict[str, Any] | None = None,
         fetch_mode: Literal["all", "one", "many"] | None = "all",
         how_many: int | None = 10,
-    ) -> Any:
+    ) -> list[Type[Ledger]] | Type[Ledger] | None:
         """
         This function reads ledger information from a SQL database using specified parameters.
 
         Args:
-          ledger_class (SQLModel): The model class to use for reading ledger information. By default, it
+            ledger_class (SQLModel): The model class to use for reading ledger information. By default, it
         is set to `Ledger`.
-          where_and_to (dict[str, Any] | None): `where_and_to` is a dictionary that specifies the
-        conditions to filter the records in the database. The keys of the dictionary represent the
-        column names and the values represent the values to filter by. For example, if you want to
-        filter by the `name` column and only retrieve records where the name
-          fetch_mode (Literal["all", "one", "many"] | None): The `fetch_mode` parameter specifies how
-        many records should be fetched from the database. It can have one of the following values:.
-        Defaults to all
-          how_many (int | None): The `how_many` parameter is an optional integer that specifies the
-        maximum number of records to fetch from the database. If `how_many` is not provided or is set to
-        `None`, the function will fetch all records that match the specified criteria. If `how_many` is
-        provided, the function. Defaults to 10
+            where_and_to (dict[str, Any] | None): `where_and_to` is a dictionary that specifies the
+                conditions to filter the records in the database. The keys of the dictionary represent the
+                column names and the values represent the values to filter by. For example, if you want to
+                filter by the `name` column and only retrieve records where the name
+            fetch_mode (Literal["all", "one", "many"] | None): The `fetch_mode` parameter specifies how
+                many records should be fetched from the database. It can have one of the following values:.
+                Defaults to all
+            how_many (int | None): The `how_many` parameter is an optional integer that specifies the
+                maximum number of records to fetch from the database. If `how_many` is not provided or is set to
+                `None`, the function will fetch all records that match the specified criteria. If `how_many` is
+                provided, the function. Defaults to 10
 
         Returns:
-          The `read_ledger_info` function is returning the result of calling the `read_records` method
-        of the parent class (which is not shown in the code snippet). The `read_records` method is
-        expected to return a result based on the parameters passed to it, which include the
-        `model_class` (a SQLModel class), `where_and_to` (a dictionary of conditions to filter the
+            The `read_ledger_info` function is returning the result of calling the `read_records` method
+            of the parent class (which is not shown in the code snippet). The `read_records` method is
+            expected to return a result based on the parameters passed to it, which include the
+            `model_class` (a SQLModel class), `where_and_to` (a dictionary of conditions to filter the
         """
         return super().read_records(
             model_class=ledger_class,
@@ -222,9 +222,7 @@ class LedgerDB(DB):
         # read everything about ledger from the database
         result: list[Ledger] = self.read_ledger_info()
         total_transactions = len([x.id for x in result])
-        total_credit = len(
-            self.read_ledger_info(where_and_to={"tag": "CREDIT"})
-        )
+        total_credit = len(self.read_ledger_info(where_and_to={"tag": "CREDIT"}))
         total_debit = len(self.read_ledger_info(where_and_to={"tag": "DEBIT"}))
         from_whom_names = set(x.from_person for x in result)
         to_whom_names = set(x.to_person for x in result)

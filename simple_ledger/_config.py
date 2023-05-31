@@ -15,8 +15,8 @@ class AppConfig:
         / "LEDGER_LOGS"
         / datetime.now().strftime("%Y")
         / datetime.now().strftime("%B").upper()
-        / str(str("DAY-") + str(datetime.now().day))
-        / str(str("HOUR-") + str(datetime.now().hour))
+        / str(str("DAY::") + str(datetime.now().day))
+        / str(str("HOUR::") + str(datetime.now().hour))
     )
     APP_LOG_DIR.mkdir(parents=True, exist_ok=True)
     mtimes = []
