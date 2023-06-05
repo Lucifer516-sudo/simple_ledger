@@ -4,5 +4,8 @@
     },
     "python.formatting.provider": "none",
     "docwriter.style": "Google",
-    "docwriter.progress.trackMethods": false
+    "docwriter.progress.trackMethods": true,
+    "docwriter.progress.trackTypes": true,
+    "docwriter.progress.trackFunctions": true,
+    "docwriter.progress.trackClasses": true
 }

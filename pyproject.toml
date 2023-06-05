@@ -14,6 +14,7 @@ colorama = "^0.4.6"
 ascii-magic = "^2.3.0"
 typer = "^0.9.0"
 flet = "^0.6.2"
+toml = "^0.10.2"
 
 
 [tool.poetry.group.dev.dependencies]
