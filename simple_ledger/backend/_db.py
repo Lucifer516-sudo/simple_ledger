@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, Literal, Optional, Type, Union
 from sqlmodel import SQLModel, Session, create_engine, select
 from pprint import pformat
-from simple_ledger._log import Logger
+from simple_ledger.utils._log import Logger
 from simple_ledger._config import AppConfig as config
 
 logger = Logger(name="PyLedger", level=config.APP_LOG_LEVEL)

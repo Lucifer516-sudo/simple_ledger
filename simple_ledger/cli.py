@@ -5,8 +5,8 @@ import dataclasses
 from datetime import datetime
 from pathlib import Path
 import typer
-from simple_ledger._log import Logger
-from simple_ledger.db import LedgerDB, Ledger
+from simple_ledger.utils._log import Logger
+from simple_ledger.backend.db import LedgerDB, Ledger
 from simple_ledger._config import AppConfig as config
 from pprint import pformat
 from rich import print, table

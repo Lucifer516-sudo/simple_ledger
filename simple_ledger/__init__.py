@@ -1,4 +1,4 @@
-from simple_ledger._log import Logger
+from simple_ledger.utils._log import Logger
 from simple_ledger._config import AppConfig as config
 
 ledger_logger = Logger(name="PyLedger", custom_name_to_message="PyLedger@Core")

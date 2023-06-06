@@ -2,7 +2,7 @@ import datetime
 from pathlib import Path
 from typing import Any, Literal, Optional, Type
 from sqlmodel import SQLModel, Field
-from simple_ledger._db import DB, logger
+from simple_ledger.backend._db import DB, logger
 from simple_ledger._config import AppConfig as config
 
 
