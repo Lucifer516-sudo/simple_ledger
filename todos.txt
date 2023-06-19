@@ -1,0 +1,27 @@
+[~] core                     [Status] => [progressing]
+    [*] api                  [Status] => [not started]
+        [*] accounts         [Status] => [not started]
+        [*] ledger           [Status] => [not started]
+    [+] db                   [Status] => [done, with minor fixes needed]
+
+[~] utils                    [Status] => [progressing]
+    [+] config handler       [Status] => [done, with minor fixes needed]
+    [+] password handler     [Status] => [done]
+    [*] logger               [Status] => [not started]
+
+[*] ui                       [Status] => [not started]
+    [*] cli                  [Status] => [not started]
+    [*] rich stuffs          [Status] => [not started]
+
+
+[>>] next place>>------------------------------------------------|||> [1.a]
+
+    [1.] api creation==============================================|> [NOT DONE]
+        [1.a] accounts handler=====================================|> [NOT DONE]
+        [1.b] ledger handler=======================================|> [NOT DONE]
+    [2.] ui========================================================|> [NOT DONE]
+        [2.a] rich stuffs==========================================|> [NOT DONE]
+        [2.b] cli==================================================|> [NOT DONE]
+    [3.] packaging=================================================|> [NOT DONE]
+        [3.a] windows==============================================|> [NOT DONE]
+        [3.b] linux================================================|> [NOT DONE]

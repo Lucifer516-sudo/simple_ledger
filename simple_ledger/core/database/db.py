@@ -1,21 +1,44 @@
 import datetime
-from pathlib import Path
 from typing import Any, Literal, Optional, Type
 from sqlmodel import SQLModel, Field
-from simple_ledger.backend._db import DB, logger
-from simple_ledger._config import AppConfig as config
+from simple_ledger.core.database._db import DB
+from simple_ledger.utils.config_handler import AppDBConfig, UserDBConfig
+
+# The above code is importing necessary modules and defining classes and functions for a database
+# backend using SQLModel. It is defining a database class DB, which is used to connect to a SQLite
+# database and perform CRUD operations. It also defines a model class SQLModel, which is used to
+# define the structure of the database tables. The code also imports a logger and the application
+# configuration from a separate module.
 
 
-class Ledger(SQLModel, table=True):  # One and only table/model : `Ledger`
-
+class MasterTable(SQLModel, table=True):
     """
-    This code block is defining a SQLModel class called `Ledger` with several fields/columns that will
-    be used to create a table in a database. Each field is defined using the `Field` class from the
-    `sqlmodel` library, which allows for specifying various properties such as data type, default value,
-    and whether the field is nullable or not.
+    The class `MasterTable` is a SQLModel representing a table with columns `id`, `user`, and
+    `password`, `created_at`.
     """
 
     id: Optional[int] = Field(default=None, primary_key=True)
+    user_name: str = Field(unique=True, nullable=False, max_length=30)
+    password: str = Field(nullable=False)
+    created_at: datetime.datetime = Field(
+        default_factory=datetime.datetime.now, nullable=False
+    )
+
+
+class Ledger(SQLModel, table=True):
+    """
+    This is a Python class representing a ledger table/model with various fields such as transaction
+    date and time, persons involved, description, amount, and tag.
+
+    The above code defines a Python class called `LedgerObject` with several attributes such as
+    `id`, `transaction_noted_on`, `transaction_noted_time`, `from_person`, `to_person`,
+    `description`, `amount`, and `tag`. These attributes are defined using the `Field` class from
+    the `pydantic` library, which provides validation and serialization of data. The `logger` object
+    is used to log an informational message when a new `LedgerObject` is created.
+    """
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user: str = Field(unique=True, nullable=False, max_length=30)
     transaction_noted_on: datetime.date = Field(
         default_factory=datetime.datetime.now().date, nullable=False
     )
@@ -28,44 +51,94 @@ class Ledger(SQLModel, table=True):  # One and only table/model : `Ledger`
     amount: float = Field(nullable=False)
     tag: str = Field(nullable=False, index=True)
 
-    logger.info("LedgerObject: Creating Ledger Object")
 
+class MasterDB(DB):
+    __instance = None
 
-class LedgerDB(DB):
-    """DB for the Ledger . Inherits from DB"""
+    def __init__(self) -> None:
+        self.database_config: AppDBConfig = AppDBConfig()
+        super().__init__(
+            db_api=self.database_config.api,
+            db_name=self.database_config.name,
+            db_dir=self.database_config.db_path,
+            echo=self.database_config.echo,
+            hide_parameters=self.database_config.hide_parameters,
+        )
 
-    def __init__(
+    def __new__(cls):
+        if cls.__instance == None:
+            cls.__instance = super().__new__(cls)
+            return super().__new__(cls)
+        else:
+            return cls.__instance
+
+    def add_user(self, *, model_object: list[MasterTable] | MasterTable) -> bool:
+        return super().insert_records(model_object=model_object)
+
+    def update_user(
         self,
+        model_class: MasterTable = MasterTable,
+        *,
+        where_and_to: dict[str, Any],
+        with_what: dict[str, Any],
     ) -> None:
+        return super().update_records(
+            model_class=model_class, where_and_to=where_and_to, with_what=with_what
+        )
+
+    def delete_user(
+        self,
+        model_class: MasterTable = MasterTable,
+        *,
+        where_and_to: dict[str, Any],
+        delete_mode: Literal["all", "one"] = "one",
+    ) -> bool:
+        return super().delete_records(
+            model_class=model_class, where_and_to=where_and_to, delete_mode=delete_mode
+        )
+
+    def search_user(
+        self, model_class: MasterTable = MasterTable, *, where_and_to: dict[str, Any]
+    ) -> list[Type[SQLModel]] | Type[SQLModel] | None:
+        return super().read_records(
+            model_class=model_class, where_and_to=where_and_to, fetch_mode="one"
+        )
+
+
+class LedgerDB(DB):  # The class LedgerDB is a subclass of DB.
+    __instance = None
+
+    def __init__(self, user_name: str) -> None:
         """
         This is a constructor function that initializes some variables and calls the constructor of a
         parent class with some arguments.
         """
+        self.user_name = user_name
         self.allowed_tags: list[str] = [
             "CREDIT",
             "DEBIT",
         ]
 
-        # `self.database_config` is a dictionary that stores the configuration details for the
-        # database used in the `LedgerDB` class. It contains the following keys and values:
-        # - `db_api`: a string that specifies the type of database API to use (in this case, SQLite)
-        # - `db_name`: a string that specifies the name of the database file (in this case,
-        # "simple_ledger.db")
-        # - `db_dir`: a `Path` object that specifies the directory where the database file should be
-        # stored (in this case, ".simple_ledger/DB")
-        # - `echo`: a boolean that specifies whether or not to enable logging of SQL statements (in
-        # this case, True)
-        # - `hide_parameters`: a boolean that specifies whether or not to hide sensitive information
-        # (such as passwords) in SQL statements (in this case, False)
-        self.database_config: dict[str, Any] = config().APP_DB_CONFIG
+        self.database_config: UserDBConfig = UserDBConfig(self.user_name)
 
         super().__init__(
-            db_api=self.database_config["db_api"],
-            db_name=self.database_config["db_name"],
-            db_dir=self.database_config["db_dir"],
-            echo=self.database_config["echo"],
-            hide_parameters=self.database_config["hide_parameters"],
+            db_api=self.database_config.api,
+            db_name=self.database_config.name,
+            db_dir=self.database_config.db_path,
+            echo=self.database_config.echo,
+            hide_parameters=self.database_config.hide_parameters,
         )
+        # The above code is calling the constructor of a class and passing in several arguments. The
+        # arguments are values from a dictionary called `database_config`. The `db_api`, `db_name`,
+        # `db_dir`, `echo`, and `hide_parameters` arguments are being passed to the constructor using
+        # the `self` keyword.
+
+    # def __new__(cls):
+    #     if cls.__instance == None:
+    #         cls.__instance = super().__new__(cls)
+    #         return super().__new__(cls)
+    #     else:
+    #         return cls.__instance
 
     def add_ledger_info(self, *, ledger: SQLModel) -> bool:
         """

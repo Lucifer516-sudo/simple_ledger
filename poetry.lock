@@ -466,6 +466,18 @@ MarkupSafe = ">=2.0"
 i18n = ["Babel (>=2.7)"]
 
 [[package]]
+name = "#-tt"
+version = "1.7.3"
+description = "Make logging simple, log even exception that you forgot to catch. Make multiprocessing logging becomes a breeze"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "logger_tt-1.7.3-py3-none-any.whl", hash = "sha256:421c155689f2cac573d8891bb32891f604b1f2f10203fc71114890dbecb22355"},
+    {file = "logger_tt-1.7.3.tar.gz", hash = "sha256:24041a10186342bfbc6ede12e6fbb88f947959933a87e85a499f1db0275ec7ca"},
+]
+
+[[package]]
 name = "markdown-it-py"
 version = "2.2.0"
 description = "Python port of markdown-it. Markdown parsing, done right!"
@@ -1495,4 +1507,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "e1257ca6ec6aa502de4c84acbad08ed8ccc099fec081b548aa76b2aff76bf032"
+content-hash = "808f2d487f0419dfe02f75b9de03d7698e4543775fa85501c7d0100f9a4fe47e"

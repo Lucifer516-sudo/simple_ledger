@@ -1,23 +1,19 @@
-from simple_ledger.utils._log import Logger
-from simple_ledger._config import AppConfig as config
+from pathlib import Path
+from simple_ledger.utils.logger import Logger
+from simple_ledger.utils.config_handler import AppConfig
 
-ledger_logger = Logger(name="PyLedger", custom_name_to_message="PyLedger@Core")
+app_config: AppConfig = AppConfig()
+log_path = Path(app_config.log_file)
 
 
-flet_core_logger: Logger = Logger(
-    name="flet_core", custom_name_to_message="PyLedger@FletCore"
-)
-flet_logger: Logger = Logger(name="flet", custom_name_to_message="PyLedger@Flet")
+logger = Logger(name="PyLedger", log_to_path=log_path)
 
-sqlalchemy_orm_logger: Logger = Logger(
-    name="sqlalchemy.orm", custom_name_to_message="PyLedger@SQLAlchemy.ORM"
-)
-sqlalchemy_dialects_logger: Logger = Logger(
-    name="sqlalchemy.dialects", custom_name_to_message="PyLedger@SQLAlchemy.DIALECT"
-)
-sqlalchemy_pool_logger: Logger = Logger(
-    name="sqlalchemy.pool", custom_name_to_message="PyLedger@SQLAlchemy.POOL"
-)
-sqlalchemy_engine_logger: Logger = Logger(
-    name="sqlalchemy.engine", custom_name_to_message="PyLedger@SQLAlchemy.ENGINE"
-)
+
+# flet_core_logger: Logger = Logger(name="flet_core", log_to_path=log_path)
+# flet_logger: Logger = Logger(name="flet", log_to_path=log_path)
+
+sqlalchemy_orm_logger: Logger = logger.get_logger("sqlalchemy.orm")
+sqlalchemy_dialects_logger: Logger = logger.get_logger(name="sqlalchemy.dialects")
+sqlalchemy_pool_logger: Logger = logger.get_logger(name="sqlalchemy.pool")
+sqlalchemy_engine_logger: Logger = logger.get_logger(name="sqlalchemy.engine")
+sqlalchemy_dialects_logger.info("hiiiiii")

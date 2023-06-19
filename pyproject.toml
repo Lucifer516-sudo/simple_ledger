@@ -16,6 +16,7 @@ typer = "^0.9.0"
 flet = "^0.6.2"
 toml = "^0.10.2"
 fastapi = {extras = ["all"], version = "^0.96.0"}
+logger-tt = "^1.7.3"
 
 
 [tool.poetry.group.dev.dependencies]

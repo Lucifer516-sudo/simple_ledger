@@ -1,12 +1,23 @@
+"""
+A generic reusable database class using sqlmodel in python, a purposed usecase is db.py
+"""
+
 import os
 from pathlib import Path
 from typing import Any, Literal, Optional, Type, Union
 from sqlmodel import SQLModel, Session, create_engine, select
 from pprint import pformat
-from simple_ledger.utils._log import Logger
-from simple_ledger._config import AppConfig as config
+from simple_ledger.core.database import database_logger as db_logger
 
-logger = Logger(name="PyLedger", level=config.APP_LOG_LEVEL)
+# The above code is importing necessary modules and classes from various libraries such as os,
+# pathlib, typing, sqlmodel, pprint,  and configuration module. It defines a class
+# that inherits from SQLModel and creates a database engine using the create_engine function. It also
+# defines a function that creates a session with the database engine and executes a select query. The
+# purpose of this code is not clear without additional context.
+
+
+def formatted_dict(data: dict) -> str:
+    return pformat(data, indent=2, sort_dicts=False)
 
 
 class DB:
@@ -47,6 +58,8 @@ class DB:
         self.db_name: str = db_name
         self.db_dir: str | Path = db_dir
 
+        db_logger.info("Creating DB ...")
+
         # Engine:
         # Engine: Pre Init Works
         try:
@@ -56,28 +69,34 @@ class DB:
             creating the database file using the `touch` command. If an exception occurs during this
             process, it logs the error and raises a critical error message.
             """
-            logger.info("DB@Init: Creating the DB Directory")
-            logger.debug(
-                f"DB@Init: DB Directory - {self.db_dir} | DB API - {self.db_api} | DB Name - {self.db_name}"
-            )
             if Path(self.db_dir).exists() == False:
                 Path(self.db_dir).mkdir(parents=True, exist_ok=True)
                 os.system(f"touch {str(self.db_dir)}{os.path.sep}{self.db_name}")
         except Exception as e:
-            logger.error(e)
-            logger.critical(
-                f"Unable to Create DB File: {str(self.db_dir)}{os.path.sep}{self.db_name}"
-            )
+            db_logger.exception(f"Exception: {e}", exc_info=True, stack_info=True)
 
         self.engine_url: str = (
             f"{self.db_api}:///{str(self.db_dir)}{os.path.sep}{self.db_name}"
         )
-        logger.info("DB@Init: Created Engine URL")
-        logger.debug(f"DB@Init: Engine URL - {self.engine_url}")
-        self.engine: Any = create_engine(
-            self.engine_url, echo=False, hide_parameters=hide_parameters
+
+        db_logger.debug(
+            f"Creating with parameters: {self.db_api=},{self.db_name=}, {self.db_dir=} {self.engine_url=}"
         )
-        logger.info("DB@Init: Creating tables in the DB")
+
+        try:
+            db_logger.info("Trying to create DB Engine ...")
+
+            self.engine: Any = create_engine(
+                self.engine_url,
+                echo=echo,
+                hide_parameters=hide_parameters,
+            )
+            db_logger.info("Created DB Engine Successfully ...")
+        except Exception as e:
+            db_logger.exception(f"Exception: {e}", exc_info=True, stack_info=True)
+            db_logger.critical(f"Application need to be stopped ...")
+            db_logger.debug(formatted_dict(locals()))
+
         self.create_table_metadata()
 
     def create_table_metadata(self) -> bool:
@@ -90,13 +109,18 @@ class DB:
         exception, it prints the error message and returns False.
         """
         try:
-            logger.debug(
-                f"DB@MetaDataCreation: Creating metadata with binded Engine - {self.engine}"
+            db_logger.info(
+                "Trying to create table meta data, i.e Tables in the database"
             )
             SQLModel.metadata.create_all(self.engine)
             return True
         except Exception as e:
-            print(e)
+            db_logger.exception(f"Exception: {e}", exc_info=True, stack_info=True)
+            db_logger.critical(
+                "Couldn't create the tables in the DB. Stop the Application ..."
+            )
+            db_logger.debug(formatted_dict(locals()))
+
             return False
 
     def insert_records(self, *, model_object: Union[list[SQLModel], SQLModel]) -> bool:
@@ -115,20 +139,30 @@ class DB:
         If there is an exception during the insertion process, it returns False.
         """
         try:
-            logger.info("DB@INSERT: CREATE Working")
             with Session(self.engine) as session:
+                db_logger.info("Inserting Data")
+                db_logger.debug(
+                    f"Inserting the given Data into the db using {session=}"
+                )
                 if type(model_object) == list:
+                    db_logger.debug(
+                        f"Inserting Multiple Data into the db with {session=}"
+                    )
                     session.add_all(model_object)
-                    logger.info("Session@INSERT: Added list of SQLModel Objects")
-                    logger.debug(f"Session@INSERT: Added Objects - {model_object}")
                 else:
+                    db_logger.debug(f"Inserting an Data into the db with {session=}")
                     session.add(model_object)
-                    logger.info("Session@INSERT: Added SQLModel Object")
-                    logger.debug(f"Session@INSERT: Added Object - {model_object}")
                 session.commit()
-                logger.debug("Session@INSERT: Committed Session ")
+                db_logger.debug("Given data Successfully committed to the db ...")
+                db_logger.debug("Data Insertion Successful !!! ...")
+                del model_object
                 return True
         except Exception as e:
+            db_logger.exception(f"Exception: {e}", exc_info=True, stack_info=True)
+            db_logger.warning(f"Failure in inserting data ...")
+            del model_object
+            db_logger.debug(formatted_dict(locals()))
+
             return False
 
     def read_records(
@@ -164,54 +198,76 @@ class DB:
         `fetch_mode` and `how_many` parameters, and the fetched data is returned. The return type can be
         any depending on the `fetch_mode` and the fetched data.
         """
+        try:
+            with Session(self.engine) as session:
+                db_logger.info("Reading Data from the DB ...")
+                db_logger.debug(
+                    f"Reading from the table: `{model_class.__name__}` with {session=}"
+                )
+                if where_and_to != None:
+                    db_logger.info(
+                        "Gotcha We have an condition to search for in the DB ..."
+                    )
+                    db_logger.debug(
+                        f"Search in the DB with condition being: {where_and_to}"
+                    )
+                    if len(list(where_and_to.keys())) == 1:
+                        db_logger.debug(f"Hahaan , We just have one condition...")
+                        statement: Type[select] = select(model_class).where(
+                            getattr(model_class, list(where_and_to.keys())[0])
+                            == list(where_and_to.values())[0]
+                        )
+                        db_logger.debug(
+                            f"Created SQL Statement to execute in the DB ..."
+                        )
+                    if len(list(where_and_to.keys())) > 1:
+                        db_logger.debug(
+                            f"Hahaan , We just have got set of conditions ,i.e => {len(list(where_and_to.keys()))} ..."
+                        )
+                        statement: Type[select] = select(model_class)
+                        try:
+                            db_logger.debug(
+                                f"Creating SQL Statement for multiple conditions given..."
+                            )
+                            for attribute, value in list(where_and_to.items()):
+                                statement = statement.where(
+                                    getattr(model_class, attribute) == value
+                                )
+                            else:
+                                db_logger.debug(
+                                    f"Created SQL Statement to execute in the DB ..."
+                                )
+                        except Exception as e:
+                            db_logger.exception(
+                                f"Exception: {e}", exc_info=True, stack_info=True
+                            )
+                            db_logger.critical(
+                                "Couldn't Create statement for mutliple conditions given ..."
+                            )
+                            db_logger.debug(formatted_dict(locals()))
 
-        with Session(self.engine) as session:
-            logger.info("Session@READ: READ Work")
-            if where_and_to != None:
-                if len(list(where_and_to.keys())) == 1:
-                    statement: Type[select] = select(model_class).where(
-                        getattr(model_class, list(where_and_to.keys())[0])
-                        == list(where_and_to.values())[0]
-                    )
-                    logger.info(
-                        "Session@READ: Reading records with the given where info"
-                    )
-                    logger.debug(
-                        f"Session@READ: Exec - {statement} \nwhere: {pformat(where_and_to, indent=2)}"
-                    )
-                if len(list(where_and_to.keys())) > 1:
+                else:
+                    db_logger.info("No condition is provided to search in the DB")
                     statement: Type[select] = select(model_class)
-                    logger.info("Session@READ: Multiple where and to keys are given")
-                    for attribute, value in list(where_and_to.items()):
-                        statement = statement.where(
-                            getattr(model_class, attribute) == value
-                        )
-                        logger.info(
-                            "Session@READ: Reading records with the given where info"
-                        )
-                        logger.debug(
-                            f"Session@READ: Exec - {statement} \nwhere: {pformat(where_and_to, indent=2)}"
-                        )
-
-            else:
-                statement: Type[select] = select(model_class)
-            result = session.exec(statement)
-            logger.info("DB@READ: Fetching data")
-            logger.debug(f"DB@READ: Fetch Mode - {fetch_mode}")
-            if fetch_mode == "all":
-                return result.all()
-            elif fetch_mode == "one":
-                try:
-                    return result.one()  # handle error
-                except Exception:
-                    pass
-                    # return result[
-                    #     0
-                    # ]  # not the best way need to handle the exception here
-            elif (fetch_mode == "many") and (how_many != None) and (how_many > 0):
-                return result.fetchmany(how_many)
-            else:  # if no fetch_mode specified
-                return result.all()
+                    db_logger.debug("Created SQL Statement to execute ...")
+                result = session.exec(statement)
+                # need to log herer
+                if fetch_mode == "all":
+                    return result.all()
+                elif fetch_mode == "one":
+                    try:
+                        return result.one()  # handle error
+                    except Exception:
+                        logger.debug(formatted_dict(locals()))
+                        # return result[
+                        #     0
+                        # ]  # not the best way need to handle the exception here
+                elif (fetch_mode == "many") and (how_many != None) and (how_many > 0):
+                    return result.fetchmany(how_many)
+                else:  # if no fetch_mode specified
+                    return result.all()
+        except Exception as e:
+            ...
 
     def update_records(
         self,
@@ -234,17 +290,12 @@ class DB:
         represent the attribute names and the values represent the updated values for those attributes.
         """
         with Session(self.engine) as session:
-            logger.info(
-                "Session@UPDATE: Update Work - Refreshing and committing to the database"
-            )
-
             try:
                 result = self.read_records(
                     model_class=model_class,
                     where_and_to=where_and_to,
                     fetch_mode="one",
                 )
-                logger.debug(f"DB@UPDATE: result - \n{result}")
 
                 for attribute, value in with_what.items():
                     setattr(
@@ -253,16 +304,8 @@ class DB:
                         value,
                     )
                     # locals()[f"result.{attribute}"] = value
-                    logger.info("DB@UPDATE: Updating Records")
-                    logger.debug(
-                        f"DB@UPDATE: Updating {result} with {attribute} being changed to {value}"
-                    )
             except Exception as e:
-                logger.error(f"DB@UPDATE: {e}")
-
                 self.insert_records(model_object=result)
-
-            # session.refresh(result)
             session.close()
 
     def delete_records(
@@ -294,23 +337,18 @@ class DB:
         """
         try:
             with Session(self.engine) as session:
-                logger.info("Session@DELETE: DELETE Work")
                 statement = select(model_class).where(
                     getattr(model_class, list(where_and_to.keys())[0])
                     == list(where_and_to.values())[0]
                 )
-                logger.debug(f"Session@DELETE: Delete Mode: {delete_mode}")
                 result = session.exec(statement)
                 if delete_mode == "one":
                     session.delete(list(result)[0])
-                    logger.debug("Session@DELETE: Deleted one result")
+
                 elif delete_mode == "all":
                     session.delete(result)
-                    logger.debug("Session@DELETE: Deleted all results")
 
-                logger.info("Session@DELETE: Committing Session")
                 session.commit()
                 return True
         except Exception as e:
-            logger.debug(f"Session@DELETE: Error deleting records: {e}")
             return False
