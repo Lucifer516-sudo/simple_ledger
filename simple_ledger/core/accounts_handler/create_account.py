@@ -10,7 +10,7 @@ def create_new_account(data: MasterTable) -> bool:
 
 
 mt = MasterTable(
-    user_name="TestUser7",
+    user_name="TestUser14",
     password="iuiwiuyiuyqw8iuyqwq8ywutyqwiuyiuywqeiuyiuyqweyqiweyqiuweyqiuweyqwuiywqieu",
 )
 # Path(AppConfig().log_path).mkdir(parents=True, exist_ok=True)

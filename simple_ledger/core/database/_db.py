@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Literal, Optional, Type, Union
 from sqlmodel import SQLModel, Session, create_engine, select
 from pprint import pformat
+
 from simple_ledger.core.database import database_logger as db_logger
 
 # The above code is importing necessary modules and classes from various libraries such as os,

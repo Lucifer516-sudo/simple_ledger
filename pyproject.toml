@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "simple-ledger"
 version = "0.1.0"
-description = ""
+description = "A Simple Ledger Application in Pure Python ..."
 authors = ["Lucifer516-sudo <harishvengat02092005@gmail.com>"]
 readme = "README.md"
 packages = [{include = "simple_ledger"}]
@@ -13,10 +13,8 @@ rich = "^13.3.4"
 colorama = "^0.4.6"
 ascii-magic = "^2.3.0"
 typer = "^0.9.0"
-flet = "^0.6.2"
-toml = "^0.10.2"
 fastapi = {extras = ["all"], version = "^0.96.0"}
-logger-tt = "^1.7.3"
+loguru = "^0.7.0"
 
 
 [tool.poetry.group.dev.dependencies]
