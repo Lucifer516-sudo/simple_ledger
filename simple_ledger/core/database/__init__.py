@@ -1,3 +1,3 @@
-from simple_ledger.core import core_logger
+from simple_ledger.core import core_logger, Logger
 
-database_logger = core_logger.getChild("database")
+database_logger = Logger(f"{core_logger.name}.database")

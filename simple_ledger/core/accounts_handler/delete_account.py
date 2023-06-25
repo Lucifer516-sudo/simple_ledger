@@ -2,7 +2,7 @@ from typing import Any
 from simple_ledger.core.database.db import MasterDB
 
 
-from simple_ledger.utils.password_maker import authenticate
+from simple_ledger.utils.password_auth.password_maker import authenticate
 
 
 def update_account(

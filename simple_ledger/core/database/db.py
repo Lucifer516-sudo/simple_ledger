@@ -2,7 +2,8 @@ import datetime
 from typing import Any, Literal, Optional, Type
 from sqlmodel import SQLModel, Field
 from simple_ledger.core.database._db import DB
-from simple_ledger.utils.config_handler import AppDBConfig, UserDBConfig
+
+# from simple_ledger.utils.config_handler import AppDBConfig, UserDBConfig
 
 # The above code is importing necessary modules and defining classes and functions for a database
 # backend using SQLModel. It is defining a database class DB, which is used to connect to a SQLite

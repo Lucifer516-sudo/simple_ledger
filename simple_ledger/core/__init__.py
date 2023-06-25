@@ -1,3 +1,3 @@
-from simple_ledger import logger
+from simple_ledger import logger, Logger
 
-core_logger = logger.getChild("core")  # maybe not needed
+core_logger = Logger(f"{logger.name}.core")  # maybe not needed

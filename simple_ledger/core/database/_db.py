@@ -5,20 +5,17 @@ A generic reusable database class using sqlmodel in python, a purposed usecase i
 import os
 from pathlib import Path
 from typing import Any, Literal, Optional, Type, Union
-from sqlmodel import SQLModel, Session, create_engine, select
+from sqlmodel import Field, SQLModel, Session, create_engine, select
 from pprint import pformat
 
 from simple_ledger.core.database import database_logger as db_logger
+from simple_ledger import logger
 
 # The above code is importing necessary modules and classes from various libraries such as os,
 # pathlib, typing, sqlmodel, pprint,  and configuration module. It defines a class
 # that inherits from SQLModel and creates a database engine using the create_engine function. It also
 # defines a function that creates a session with the database engine and executes a select query. The
 # purpose of this code is not clear without additional context.
-
-
-def formatted_dict(data: dict) -> str:
-    return pformat(data, indent=2, sort_dicts=False)
 
 
 class DB:
@@ -29,6 +26,7 @@ class DB:
 
     def __init__(
         self,
+        tables: list[SQLModel],
         *,
         db_api: str,
         db_name: str,
@@ -55,6 +53,7 @@ class DB:
         in the SQL queries executed by the engine. If set to True, the parameters will be replaced with
         question marks in the query.
         """
+        self.tables = tables
         self.db_api: str = db_api
         self.db_name: str = db_name
         self.db_dir: str | Path = db_dir
@@ -74,7 +73,9 @@ class DB:
                 Path(self.db_dir).mkdir(parents=True, exist_ok=True)
                 os.system(f"touch {str(self.db_dir)}{os.path.sep}{self.db_name}")
         except Exception as e:
-            db_logger.exception(f"Exception: {e}", exc_info=True, stack_info=True)
+            db_logger.exception(
+                f"Exception While Creating DB File: ", exc_info=e, stack_info=True
+            )
 
         self.engine_url: str = (
             f"{self.db_api}:///{str(self.db_dir)}{os.path.sep}{self.db_name}"
@@ -94,12 +95,14 @@ class DB:
             )
             db_logger.info("Created DB Engine Successfully ...")
         except Exception as e:
-            db_logger.exception(f"Exception: {e}", exc_info=True, stack_info=True)
+            db_logger.exception(
+                f"Exception Occurred !!!:", exc_info=e, stack_info=True, stacklevel=3
+            )
             db_logger.critical(f"Application need to be stopped ...")
-            db_logger.debug(formatted_dict(locals()))
 
         self.create_table_metadata()
 
+    @db_logger.timer
     def create_table_metadata(self) -> bool:
         """
         This function creates metadata for a database using a bound engine and returns a boolean
@@ -113,17 +116,19 @@ class DB:
             db_logger.info(
                 "Trying to create table meta data, i.e Tables in the database"
             )
-            SQLModel.metadata.create_all(self.engine)
+            SQLModel.metadata.create_all(
+                self.engine, tables=self.tables
+            )  # need to change this field else this will cause duplicate tables in created DBs
             return True
         except Exception as e:
-            db_logger.exception(f"Exception: {e}", exc_info=True, stack_info=True)
+            db_logger.exception(f"Exception Occurred !!!:", exc_info=e, stack_info=True)
             db_logger.critical(
                 "Couldn't create the tables in the DB. Stop the Application ..."
             )
-            db_logger.debug(formatted_dict(locals()))
 
             return False
 
+    @db_logger.timer
     def insert_records(self, *, model_object: Union[list[SQLModel], SQLModel]) -> bool:
         """
         The function inserts one or more SQLModel objects into a database session and returns a boolean
@@ -159,13 +164,13 @@ class DB:
                 del model_object
                 return True
         except Exception as e:
-            db_logger.exception(f"Exception: {e}", exc_info=True, stack_info=True)
+            db_logger.exception(f"Exception Occurred !!!:", exc_info=e, stack_info=True)
             db_logger.warning(f"Failure in inserting data ...")
             del model_object
-            db_logger.debug(formatted_dict(locals()))
 
             return False
 
+    @db_logger.timer
     def read_records(
         self,
         *,
@@ -240,12 +245,11 @@ class DB:
                                 )
                         except Exception as e:
                             db_logger.exception(
-                                f"Exception: {e}", exc_info=True, stack_info=True
+                                f"Exception Occurred !!!:", exc_info=e, stack_info=True
                             )
                             db_logger.critical(
                                 "Couldn't Create statement for mutliple conditions given ..."
                             )
-                            db_logger.debug(formatted_dict(locals()))
 
                 else:
                     db_logger.info("No condition is provided to search in the DB")
@@ -259,10 +263,7 @@ class DB:
                     try:
                         return result.one()  # handle error
                     except Exception:
-                        logger.debug(formatted_dict(locals()))
-                        # return result[
-                        #     0
-                        # ]  # not the best way need to handle the exception here
+                        db_logger.exception(e)
                 elif (fetch_mode == "many") and (how_many != None) and (how_many > 0):
                     return result.fetchmany(how_many)
                 else:  # if no fetch_mode specified
@@ -270,6 +271,7 @@ class DB:
         except Exception as e:
             ...
 
+    @db_logger.timer
     def update_records(
         self,
         *,
@@ -309,6 +311,7 @@ class DB:
                 self.insert_records(model_object=result)
             session.close()
 
+    @db_logger.timer
     def delete_records(
         self,
         *,
@@ -353,3 +356,21 @@ class DB:
                 return True
         except Exception as e:
             return False
+
+
+# try:
+#     db_dir = Path("DB-opt")
+#     db = DB(
+#         db_api="sqlite",
+#         db_name="test.db",
+#         db_dir=db_dir,
+#         echo=False,
+#         hide_parameters=False,
+#     )
+
+#     logger.info("Try")
+#     db.create_table_metadata()
+# except Exception as e:
+#     logger.exception(e)
+
+DB().insert_records()

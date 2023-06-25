@@ -7,5 +7,6 @@
     "docwriter.progress.trackMethods": true,
     "docwriter.progress.trackTypes": true,
     "docwriter.progress.trackFunctions": true,
-    "docwriter.progress.trackClasses": true
+    "docwriter.progress.trackClasses": true,
+    "python.analysis.typeCheckingMode": "off"
 }
