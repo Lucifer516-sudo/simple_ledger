@@ -95,7 +95,7 @@ def generate_app_config(
         if DEFAULT_RELEASE == "dev":
             DEFAULT_DB_HIDE_PARAMETERS = False
             DEFAULT_LOGGING_LEVEL = logging.DEBUG
-            DEFAULT_RENDER_TO_SCREEN = True
+            DEFAULT_RENDER_TO_SCREEN = False
         else:
             DEFAULT_DB_HIDE_PARAMETERS = False
             DEFAULT_LOGGING_LEVEL = logging.DEBUG

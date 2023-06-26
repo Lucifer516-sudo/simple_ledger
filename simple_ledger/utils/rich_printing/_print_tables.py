@@ -93,31 +93,3 @@ def rich_table(data: TableData):
         table.add_row(*row.values, style=row.style)
 
     return table
-
-
-data = TableData(
-    title="Ledger Entry 0f 2023",
-    columns=[
-        Column(value="S.No"),
-        Column(value="Name", justify="left"),
-        Column(
-            value="Amount in Rs.",
-            justify="right",
-            convert_to_money=True,
-            money_symbol="Rs",
-        ),
-        Column(value="Mode", justify="right"),
-    ],
-    rows=[
-        Row(values=["1.", "Vengat", 1000000.0601010101111, "Credit"]),
-        Row(values=["2.", "Logu", 10.012, "Credit"]),
-        Row(values=["3.", "Vengat", 1121200.012, "Credit"]),
-        Row(values=["4.", "Vengat", 101221100.012, "Credit"]),
-        Row(values=["5.", "Sakthi", 1.012, "Credit"]),
-    ],
-)
-
-from rich import print
-
-
-print(rich_table(data=data))

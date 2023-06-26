@@ -3,6 +3,8 @@ from typing import Any, Literal, Optional, Type
 from sqlmodel import SQLModel, Field
 from simple_ledger.core.database._db import DB
 
+from simple_ledger.utils.config.config import PRE_CONFIGURED_APP_CONFIG
+
 # from simple_ledger.utils.config_handler import AppDBConfig, UserDBConfig
 
 # The above code is importing necessary modules and defining classes and functions for a database
@@ -10,20 +12,6 @@ from simple_ledger.core.database._db import DB
 # database and perform CRUD operations. It also defines a model class SQLModel, which is used to
 # define the structure of the database tables. The code also imports a logger and the application
 # configuration from a separate module.
-
-
-class MasterTable(SQLModel, table=True):
-    """
-    The class `MasterTable` is a SQLModel representing a table with columns `id`, `user`, and
-    `password`, `created_at`.
-    """
-
-    id: Optional[int] = Field(default=None, primary_key=True)
-    user_name: str = Field(unique=True, nullable=False, max_length=30)
-    password: str = Field(nullable=False)
-    created_at: datetime.datetime = Field(
-        default_factory=datetime.datetime.now, nullable=False
-    )
 
 
 class Ledger(SQLModel, table=True):
@@ -39,32 +27,20 @@ class Ledger(SQLModel, table=True):
     """
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    user: str = Field(unique=True, nullable=False, max_length=30)
     transaction_noted_on: datetime.date = Field(
         default_factory=datetime.datetime.now().date, nullable=False
     )
     transaction_noted_time: datetime.time = Field(
         default_factory=datetime.datetime.now().time, nullable=False
     )
-    from_person: str = Field(nullable=False, max_length=30)
-    to_person: str = Field(nullable=False, max_length=30)
-    description: Optional[str] = Field(nullable=False, max_length=400)
-    amount: float = Field(nullable=False)
-    tag: str = Field(nullable=False, index=True)
+    customer_name: str = Field(nullable=False, max_length=50)
+    customer_mobile: str = Field(nullable=False, max_length=50)
+    amount_charged: float = Field(nullable=False)
+    # tag: str = Field(nullable=False, index=True)
 
 
-class MasterDB(DB):
+class LedgerDB(DB):  # The class LedgerDB is a subclass of DB.
     __instance = None
-
-    def __init__(self) -> None:
-        self.database_config: AppDBConfig = AppDBConfig()
-        super().__init__(
-            db_api=self.database_config.api,
-            db_name=self.database_config.name,
-            db_dir=self.database_config.db_path,
-            echo=self.database_config.echo,
-            hide_parameters=self.database_config.hide_parameters,
-        )
 
     def __new__(cls):
         if cls.__instance == None:
@@ -73,73 +49,32 @@ class MasterDB(DB):
         else:
             return cls.__instance
 
-    def add_user(self, *, model_object: list[MasterTable] | MasterTable) -> bool:
-        return super().insert_records(model_object=model_object)
-
-    def update_user(
+    def __init__(
         self,
-        model_class: MasterTable = MasterTable,
-        *,
-        where_and_to: dict[str, Any],
-        with_what: dict[str, Any],
     ) -> None:
-        return super().update_records(
-            model_class=model_class, where_and_to=where_and_to, with_what=with_what
-        )
-
-    def delete_user(
-        self,
-        model_class: MasterTable = MasterTable,
-        *,
-        where_and_to: dict[str, Any],
-        delete_mode: Literal["all", "one"] = "one",
-    ) -> bool:
-        return super().delete_records(
-            model_class=model_class, where_and_to=where_and_to, delete_mode=delete_mode
-        )
-
-    def search_user(
-        self, model_class: MasterTable = MasterTable, *, where_and_to: dict[str, Any]
-    ) -> list[Type[SQLModel]] | Type[SQLModel] | None:
-        return super().read_records(
-            model_class=model_class, where_and_to=where_and_to, fetch_mode="one"
-        )
-
-
-class LedgerDB(DB):  # The class LedgerDB is a subclass of DB.
-    __instance = None
-
-    def __init__(self, user_name: str) -> None:
         """
         This is a constructor function that initializes some variables and calls the constructor of a
         parent class with some arguments.
         """
-        self.user_name = user_name
+        self.user_name = "Harish"
         self.allowed_tags: list[str] = [
             "CREDIT",
             "DEBIT",
         ]
 
-        self.database_config: UserDBConfig = UserDBConfig(self.user_name)
+        self.database_config = PRE_CONFIGURED_APP_CONFIG
 
         super().__init__(
-            db_api=self.database_config.api,
-            db_name=self.database_config.name,
-            db_dir=self.database_config.db_path,
-            echo=self.database_config.echo,
-            hide_parameters=self.database_config.hide_parameters,
+            db_api=self.database_config.DB_API,
+            db_name=self.user_name.upper() + ".db",
+            db_dir=self.database_config.DB_DIR_PATH,
+            echo=self.database_config.DB_ECH0,
+            hide_parameters=self.database_config.DB_HIDE_PARAMETERS,
         )
         # The above code is calling the constructor of a class and passing in several arguments. The
         # arguments are values from a dictionary called `database_config`. The `db_api`, `db_name`,
         # `db_dir`, `echo`, and `hide_parameters` arguments are being passed to the constructor using
         # the `self` keyword.
-
-    # def __new__(cls):
-    #     if cls.__instance == None:
-    #         cls.__instance = super().__new__(cls)
-    #         return super().__new__(cls)
-    #     else:
-    #         return cls.__instance
 
     def add_ledger_info(self, *, ledger: SQLModel) -> bool:
         """
@@ -268,78 +203,3 @@ class LedgerDB(DB):  # The class LedgerDB is a subclass of DB.
             model_class=ledger_class,
             where_and_to=where_and_to,
         )
-
-    def summary(self) -> dict:
-        """
-        The function summarizes ledger information by calculating total transactions, total credit and
-        debit amounts, and amounts credited and debited by each person.
-
-        Args:
-          from_ (datetime.date): The start date for the summary period, represented as a datetime.date
-        object.
-          to_ (datetime.date): The `to_` parameter is a `datetime.date` object representing the end date
-        of the time period for which the summary is being generated.
-
-        Returns:
-          A dictionary containing various summary information about the ledger transactions, such as
-        total number of transactions, total credit and debit amounts, names of people who made
-        transactions, and amounts credited and debited by each person.
-        """
-        total_transactions: int = 0
-        total_credit: float = 0.0
-        total_debit: float = 0.0
-        from_whom_names: set[str] = ""
-        to_whom_names: set[str] = ""
-        amount_credited_by: list[dict[str, float]] = []
-        amount_debited_by: list[dict[str, float]] = []
-
-        # read everything about ledger from the database
-        result: list[Ledger] = self.read_ledger_info()
-        total_transactions = len([x.id for x in result])
-        total_credit = len(self.read_ledger_info(where_and_to={"tag": "CREDIT"}))
-        total_debit = len(self.read_ledger_info(where_and_to={"tag": "DEBIT"}))
-        from_whom_names = set(x.from_person for x in result)
-        to_whom_names = set(x.to_person for x in result)
-
-        set_of_froms = set(from_whom_names)
-
-        # The above code is initializing two empty lists `amount_credited_by` and `amount_debited_by`
-        # and then iterating over a set of names `set_of_froms`. For each name in the set, it is
-        # adding a dictionary with the name as key and 0.0 as value to both `amount_credited_by` and
-        # `amount_debited_by`.
-        # The above code is iterating over a set of values called `set_of_froms` using a `for` loop.
-        # For each value in the set, the loop assigns the value to the variable `name` and executes
-        # the code block that follows the colon.
-        for name in set_of_froms:
-            amount_credited_by.append({name: 0.0})
-            amount_debited_by.append({name: 0.0})
-
-        for name in set_of_froms:
-            for users in amount_credited_by:
-                users[name] = sum(
-                    [
-                        x.amount
-                        for x in self.read_ledger_info(
-                            where_and_to={"from_person": name, "tag": "CREDIT"}
-                        )
-                    ]
-                )
-            for users in amount_debited_by:
-                users[name] = sum(
-                    [
-                        x.amount
-                        for x in self.read_ledger_info(
-                            where_and_to={"from_person": name, "tag": "DEBIT"}
-                        )
-                    ]
-                )
-
-        return {
-            "total_transactions": total_transactions,
-            "total_credit": total_credit,
-            "total_debit": total_debit,
-            "from_whom_names": from_whom_names,
-            "to_whom_names": to_whom_names,
-            "amount_credited_by": amount_credited_by,
-            "amount_debited_by": amount_debited_by,
-        }

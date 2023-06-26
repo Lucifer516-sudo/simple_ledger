@@ -90,3 +90,20 @@ def remove_folder_recursively(path: pathlib.Path) -> bool:
     except Exception:
         # not interested in raising error
         return False
+
+
+def create_file(path: pathlib.Path, force: bool = True, parents: bool = False) -> bool:
+    if not force:
+        if not path.exists():
+            path.touch()
+            return True
+
+    elif force:
+        if path.exists() and path.is_file():
+            path.unlink()  # deletes the file
+
+        path.touch()
+        return True
+
+    else:
+        return False

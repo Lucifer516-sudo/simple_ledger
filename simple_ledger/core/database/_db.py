@@ -9,7 +9,7 @@ from sqlmodel import Field, SQLModel, Session, create_engine, select
 from pprint import pformat
 
 from simple_ledger.core.database import database_logger as db_logger
-from simple_ledger import logger
+from simple_ledger.utils.file_handling.file_ops import create_folder, create_file
 
 # The above code is importing necessary modules and classes from various libraries such as os,
 # pathlib, typing, sqlmodel, pprint,  and configuration module. It defines a class
@@ -19,6 +19,7 @@ from simple_ledger import logger
 
 
 class DB:
+
     """
     The DB class provides methods for creating, reading, updating, and deleting records in a database
     using SQLAlchemy.
@@ -26,7 +27,6 @@ class DB:
 
     def __init__(
         self,
-        tables: list[SQLModel],
         *,
         db_api: str,
         db_name: str,
@@ -53,7 +53,6 @@ class DB:
         in the SQL queries executed by the engine. If set to True, the parameters will be replaced with
         question marks in the query.
         """
-        self.tables = tables
         self.db_api: str = db_api
         self.db_name: str = db_name
         self.db_dir: str | Path = db_dir
@@ -69,9 +68,7 @@ class DB:
             creating the database file using the `touch` command. If an exception occurs during this
             process, it logs the error and raises a critical error message.
             """
-            if Path(self.db_dir).exists() == False:
-                Path(self.db_dir).mkdir(parents=True, exist_ok=True)
-                os.system(f"touch {str(self.db_dir)}{os.path.sep}{self.db_name}")
+            self.create_data_base_directory_and_file()
         except Exception as e:
             db_logger.exception(
                 f"Exception While Creating DB File: ", exc_info=e, stack_info=True
@@ -103,6 +100,16 @@ class DB:
         self.create_table_metadata()
 
     @db_logger.timer
+    def create_data_base_directory_and_file(self, force: bool = False):
+        try:
+            create_folder(Path(self.db_dir), force, parents=True)
+            create_file(
+                path=Path(Path(self.db_dir) / self.db_name), force=force, parents=True
+            )
+        except Exception as e:
+            db_logger.exception(e)
+
+    @db_logger.timer
     def create_table_metadata(self) -> bool:
         """
         This function creates metadata for a database using a bound engine and returns a boolean
@@ -117,7 +124,7 @@ class DB:
                 "Trying to create table meta data, i.e Tables in the database"
             )
             SQLModel.metadata.create_all(
-                self.engine, tables=self.tables
+                self.engine
             )  # need to change this field else this will cause duplicate tables in created DBs
             return True
         except Exception as e:
@@ -258,18 +265,31 @@ class DB:
                 result = session.exec(statement)
                 # need to log herer
                 if fetch_mode == "all":
+                    db_logger.debug(f"Fetching All Data; since {fetch_mode=}")
+                    db_logger.debug("Returning All Data")
                     return result.all()
                 elif fetch_mode == "one":
                     try:
+                        db_logger.debug(f"Fetching One Data; since {fetch_mode=}")
+                        db_logger.debug("Returning A Data")
                         return result.one()  # handle error
                     except Exception:
                         db_logger.exception(e)
+                        db_logger.warning(f"Couldn't fetch Data from the DB")
                 elif (fetch_mode == "many") and (how_many != None) and (how_many > 0):
+                    db_logger.debug(
+                        f"Fetching As many data as {how_many}; since {fetch_mode=}"
+                    )
+                    db_logger.debug(f"Returning {how_many} datum")
                     return result.fetchmany(how_many)
                 else:  # if no fetch_mode specified
+                    db_logger.debug(
+                        "Returning all Data ; Since no fetch mode is specified"
+                    )
                     return result.all()
         except Exception as e:
-            ...
+            db_logger.exception(f"Caught an UnExpected Exception: {e}")
+            db_logger.warning("Got No Data with me now ...")
 
     @db_logger.timer
     def update_records(
@@ -293,6 +313,7 @@ class DB:
         represent the attribute names and the values represent the updated values for those attributes.
         """
         with Session(self.engine) as session:
+            db_logger.debug(f"Trying to update data with {session=}")
             try:
                 result = self.read_records(
                     model_class=model_class,
@@ -306,10 +327,13 @@ class DB:
                         attribute,
                         value,
                     )
-                    # locals()[f"result.{attribute}"] = value
+                    db_logger.debug(f"Updating {result}.{attribute} with {value}")
             except Exception as e:
                 self.insert_records(model_object=result)
+                db_logger.warning(f"Exception Doi...")
+                db_logger.exception(f"Caught an Exception: {e}")
             session.close()
+            db_logger.debug(f"Closed the session: {session}")
 
     @db_logger.timer
     def delete_records(
@@ -341,36 +365,24 @@ class DB:
         """
         try:
             with Session(self.engine) as session:
+                db_logger.debug(
+                    f"Trying to delete on the model class: {model_class} ; with {session=}"
+                )
                 statement = select(model_class).where(
                     getattr(model_class, list(where_and_to.keys())[0])
                     == list(where_and_to.values())[0]
                 )
                 result = session.exec(statement)
                 if delete_mode == "one":
+                    db_logger.debug(f"Deleting with {delete_mode=}")
                     session.delete(list(result)[0])
 
                 elif delete_mode == "all":
+                    db_logger.debug(f"Deleting with {delete_mode=}")
                     session.delete(result)
-
                 session.commit()
+                db_logger.debug(f"Committed Data to DB after deletion process")
                 return True
         except Exception as e:
+            db_logger.exception(f"Caught an Exception while deletion process: {e}")
             return False
-
-
-# try:
-#     db_dir = Path("DB-opt")
-#     db = DB(
-#         db_api="sqlite",
-#         db_name="test.db",
-#         db_dir=db_dir,
-#         echo=False,
-#         hide_parameters=False,
-#     )
-
-#     logger.info("Try")
-#     db.create_table_metadata()
-# except Exception as e:
-#     logger.exception(e)
-
-DB().insert_records()

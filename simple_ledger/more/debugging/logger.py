@@ -7,6 +7,7 @@ from time import perf_counter
 from rich.logging import RichHandler
 from simple_ledger.utils.rich_printing._get_console import get_console
 from simple_ledger.utils.config.config import PRE_CONFIGURED_APP_CONFIG as CONFIG
+from simple_ledger.utils.file_handling.file_ops import create_folder, create_file
 
 
 class Logger(logging.Logger):
@@ -26,6 +27,8 @@ class Logger(logging.Logger):
 
         if not ((log_file is None) and (log_file is None)):
             self._log_folder = log_folder
+            create_folder(self._log_folder, force=False, parents=True)
+            create_file((Path(self._log_folder) / log_file))
             self._log_file = open(str(Path(self._log_folder) / log_file), "wt")  # type: ignore
             self._console_to_write_file = get_console(record=True, file=self._log_file)  # type: ignore
 
@@ -176,7 +179,9 @@ class Logger(logging.Logger):
 
         return wrapper
 
-    def timer(self, func: Callable, msg: str | None = None):
+    def timer(
+        self, func: Callable[..., Any], msg: str | None = None
+    ) -> Callable[..., Any]:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             start = perf_counter()
