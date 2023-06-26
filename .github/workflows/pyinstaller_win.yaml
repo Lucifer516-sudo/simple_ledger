@@ -16,8 +16,9 @@ jobs:
           (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | py -
           C:\Users\runneradmin\AppData\Roaming\Python\Scripts\poetry install
           C:\Users\runneradmin\AppData\Roaming\Python\Scripts\poetry run pip3 install pyinstaller
-          C:\Users\runneradmin\AppData\Roaming\Python\Scripts\poetry run flet pack -v -i simple_ledger/icon/20230423_122200_0000.png  -n PyLedger simple_ledger/fletter/controls.py
+          C:\Users\runneradmin\AppData\Roaming\Python\Scripts\poetry run pyinstaller -F -n PyLedger simple_ledger/cli/pyledger.py
           ls dist
+          C:\Users\runneradmin\AppData\Roaming\Python\Scripts\poetry run pyinstaller simple_ledger/cli/pyledger.spec
 
       - name: Upload build as artifact
         uses: actions/upload-artifact@v3
@@ -40,8 +41,9 @@ jobs:
           curl -sSL https://install.python-poetry.org | python3 -
           poetry install
           poetry run pip3 install pyinstaller
-          poetry run flet pack -v -i simple_ledger/icon/20230423_122200_0000.png  -n PyLedger simple_ledger/fletter/controls.py
+          poetry run pyinstaller -F -n PyLedger simple_ledger/cli/pyledger.py
           ls dist
+          poetry run pyinstaller simple_ledger/cli/pyledger.spec
 
       - name: Upload build as artifact
         uses: actions/upload-artifact@v3
